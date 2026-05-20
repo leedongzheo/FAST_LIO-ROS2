@@ -1,470 +1,195 @@
-# FAST_LIO-ROS2
-Chạy code fast-lio2
-cd ~/Documents/anhthu/fast-lio2/src/
-git clone https://github.com/Livox-SDK/livox_ros_driver2.git
-git clone -b ROS2 https://github.com/hku-mars/FAST_LIO.git
-cd /home/crl/Documents/anhthu/fast-lio2/src/FAST_LIO/include
-rm -rf ikd-Tree
-git clone https://github.com/hku-mars/ikd-Tree.git temp_repo
-mv temp_repo/ikd-Tree ./
-rm -rf temp_repo
-cd ~/Documents/anhthu/fast-lio2/src/livox_ros_driver2
-cp package_ROS2.xml package.xml
-sed -i 's/||dev_type==LivoxLidarDeviceType::kLivoxLidarTypeMid360s//g' ~/Documents/anhthu/fast-lio2/src/livox_ros_driver2/src/comm/pub_handler.cpp
-cd ~/Documents/anhthu/fast-lio2
-colcon build --packages-select livox_ros_driver2 --cmake-args -DROS_EDITION=ROS2 -DDISTRO_ROS=jazzy
-source install/setup.zsh
-Với Ubuntu Ubuntu 24.04 được viết bằng C17:
-Vào file ~/Documents/anhthu/fast-lio2/src/FAST_LIO/CMakeLists.txt
---------------------------------------------------
-cmake_minimum_required(VERSION 3.8)
-project(fast_lio)
+> ROS2 Fork repo maintainer: [Ericsiii](https://github.com/Ericsii)
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
+## Related Works and Extended Application
 
-# Nâng cấp lên chuẩn C++17 cho ROS 2 Jazzy
-ADD_COMPILE_OPTIONS(-std=c++17)
-set(CMAKE_CXX_FLAGS "-std=c++17 -O3")
+**SLAM:**
 
-add_definitions(-DROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/\")
+1. [ikd-Tree](https://github.com/hku-mars/ikd-Tree): A state-of-art dynamic KD-Tree for 3D kNN search.
+2. [R2LIVE](https://github.com/hku-mars/r2live): A high-precision LiDAR-inertial-Vision fusion work using FAST-LIO as LiDAR-inertial front-end.
+3. [LI_Init](https://github.com/hku-mars/LiDAR_IMU_Init): A robust, real-time LiDAR-IMU extrinsic initialization and synchronization package..
+4. [FAST-LIO-LOCALIZATION](https://github.com/HViktorTsoi/FAST_LIO_LOCALIZATION): The integration of FAST-LIO with **Re-localization** function module.
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fexceptions")
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-# Xóa bỏ các cờ c++14 và c++0x cũ kỹ gây xung đột
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -fexceptions")
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+**Control and Plan:**
 
-message("Current CPU archtecture: ${CMAKE_SYSTEM_PROCESSOR}")
+1. [IKFOM](https://github.com/hku-mars/IKFoM): A Toolbox for fast and high-precision on-manifold Kalman filter.
+2. [UAV Avoiding Dynamic Obstacles](https://github.com/hku-mars/dyn_small_obs_avoidance): One of the implementation of FAST-LIO in robot's planning.
+3. [UGV Demo](https://www.youtube.com/watch?v=wikgrQbE6Cs): Model Predictive Control for Trajectory Tracking on Differentiable Manifolds.
+4. [Bubble Planner](https://arxiv.org/abs/2202.12177): Planning High-speed Smooth Quadrotor Trajectories using Receding Corridors.
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
-  include(ProcessorCount)
-  ProcessorCount(N)
-  message("Processer number:  ${N}")
+<!-- 10. [**FAST-LIVO**](https://github.com/hku-mars/FAST-LIVO): Fast and Tightly-coupled Sparse-Direct LiDAR-Inertial-Visual Odometry. -->
 
-  if(N GREATER 4)
-    add_definitions(-DMP_EN)
-    add_definitions(-DMP_PROC_NUM=3)
-    message("core for MP: 3")
-  elseif(N GREATER 3)
-    add_definitions(-DMP_EN)
-    add_definitions(-DMP_PROC_NUM=2)
-    message("core for MP: 2")
-  else()
-    add_definitions(-DMP_PROC_NUM=1)
-  endif()
-else()
-  add_definitions(-DMP_PROC_NUM=1)
-endif()
+## FAST-LIO
+**FAST-LIO** (Fast LiDAR-Inertial Odometry) is a computationally efficient and robust LiDAR-inertial odometry package. It fuses LiDAR feature points with IMU data using a tightly-coupled iterated extended Kalman filter to allow robust navigation in fast-motion, noisy or cluttered environments where degeneration occurs. Our package address many key issues:
+1. Fast iterated Kalman filter for odometry optimization;
+2. Automaticaly initialized at most steady environments;
+3. Parallel KD-Tree Search to decrease the computation;
 
-find_package(OpenMP QUIET)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}   ${OpenMP_C_FLAGS}")
+## FAST-LIO 2.0 (2021-07-05 Update)
+<!-- ![image](doc/real_experiment2.gif) -->
+<!-- [![Watch the video](doc/real_exp_2.png)](https://youtu.be/2OvjGnxszf8) -->
+<div align="left">
+<img src="doc/real_experiment2.gif" width=49.6% />
+<img src="doc/ulhkwh_fastlio.gif" width = 49.6% >
+</div>
 
-find_package(PythonLibs REQUIRED)
-find_path(MATPLOTLIB_CPP_INCLUDE_DIRS "matplotlibcpp.h")
+**Related video:**  [FAST-LIO2](https://youtu.be/2OvjGnxszf8),  [FAST-LIO1](https://youtu.be/iYCY6T79oNU)
 
-# ROS dependencies
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_components REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(std_srvs REQUIRED)
-find_package(visualization_msgs REQUIRED)
-find_package(pcl_ros REQUIRED)
-find_package(pcl_conversions REQUIRED)
-find_package(livox_ros_driver2 REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
+**Pipeline:**
+<div align="center">
+<img src="doc/overview_fastlio2.svg" width=99% />
+</div>
 
-set(dependencies
-  rclcpp
-  rclcpp_components
-  geometry_msgs
-  nav_msgs
-  sensor_msgs
-  std_msgs
-  std_srvs
-  visualization_msgs
-  pcl_ros
-  pcl_conversions
-  livox_ros_driver2
-)
+**New Features:**
+1. Incremental mapping using [ikd-Tree](https://github.com/hku-mars/ikd-Tree), achieve faster speed and over 100Hz LiDAR rate.
+2. Direct odometry (scan to map) on Raw LiDAR points (feature extraction can be disabled), achieving better accuracy.
+3. Since no requirements for feature extraction, FAST-LIO2 can support many types of LiDAR including spinning (Velodyne, Ouster) and solid-state (Livox Avia, Horizon, MID-70) LiDARs, and can be easily extended to support more LiDARs.
+4. Support external IMU.
+5. Support ARM-based platforms including Khadas VIM3, Nivida TX2, Raspberry Pi 4B(8G RAM).
 
-# Thirdparty libraries
-find_package(Eigen3 REQUIRED)
-find_package(PCL REQUIRED COMPONENTS common io)
+**Related papers**: 
 
-message(Eigen: ${EIGEN3_INCLUDE_DIR})
-message(STATUS "PCL: ${PCL_INCLUDE_DIRS}")
+[FAST-LIO2: Fast Direct LiDAR-inertial Odometry](doc/Fast_LIO_2.pdf)
 
-set(msg_files
-  "msg/Pose6D.msg"
-)
+[FAST-LIO: A Fast, Robust LiDAR-inertial Odometry Package by Tightly-Coupled Iterated Kalman Filter](https://arxiv.org/abs/2010.08196)
 
-rosidl_generate_interfaces(${PROJECT_NAME}
-  ${msg_files}
-)
-ament_export_dependencies(rosidl_default_runtime)
+**Contributors**
 
-add_executable(fastlio_mapping src/laserMapping.cpp include/ikd-Tree/ikd_Tree.cpp src/preprocess.cpp)
-target_include_directories(fastlio_mapping PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-  ${PCL_INCLUDE_DIRS}
-)
-target_link_libraries(fastlio_mapping ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} Eigen3::Eigen)
-target_include_directories(fastlio_mapping PRIVATE ${PYTHON_INCLUDE_DIRS})
+[Wei Xu 徐威](https://github.com/XW-HKU)，[Yixi Cai 蔡逸熙](https://github.com/Ecstasy-EC)，[Dongjiao He 贺东娇](https://github.com/Joanna-HE)，[Fangcheng Zhu 朱方程](https://github.com/zfc-zfc)，[Jiarong Lin 林家荣](https://github.com/ziv-lin)，[Zheng Liu 刘政](https://github.com/Zale-Liu), [Borong Yuan](https://github.com/borongyuan)
 
-list(APPEND EOL_LIST "foxy" "galactic" "eloquent" "dashing" "crystal")
+<!-- <div align="center">
+    <img src="doc/results/HKU_HW.png" width = 49% >
+    <img src="doc/results/HKU_MB_001.png" width = 49% >
+</div> -->
 
-if($ENV{ROS_DISTRO} IN_LIST EOL_LIST)
-  # Custommsg to support foxy & galactic
-  rosidl_target_interfaces(fastlio_mapping
-    ${PROJECT_NAME} "rosidl_typesupport_cpp")
-else()
-  rosidl_get_typesupport_target(cpp_typesupport_target
-    ${PROJECT_NAME} "rosidl_typesupport_cpp")
-  target_link_libraries(fastlio_mapping ${cpp_typesupport_target})
-endif()
+## 1. Prerequisites
+### 1.1 **Ubuntu** and **ROS**
+**Ubuntu >= 20.04**
 
-ament_target_dependencies(fastlio_mapping ${dependencies})
+The **default from apt** PCL and Eigen is enough for FAST-LIO to work normally.
 
-# ---------------- Install --------------- #
-install(TARGETS fastlio_mapping
-  DESTINATION lib/${PROJECT_NAME}
-)
+ROS >= Foxy (Recommend to use ROS-Humble). [ROS Installation](https://docs.ros.org/en/humble/Installation.html)
 
-install(
-  DIRECTORY config launch rviz
-  DESTINATION share/${PROJECT_NAME}
-)
+### 1.2. **PCL && Eigen**
+PCL    >= 1.8,   Follow [PCL Installation](https://pointclouds.org/downloads/#linux).
 
-ament_package()
-------------------------------------------------------------------
-cd ~/Documents/anhthu/fast-lio2
-colcon build --packages-select fast_lio
-source install/setup.zsh
-------------------------------------------------------------------
-Thêm file nano /home/crl/Documents/anhthu/fast-lio2/src/FAST_LIO/config/city02.yaml
-Nội dung file city02.yaml
--------------------------------------------------------------------------------
-/**:
-  ros__parameters:
-    common:
-      lid_topic:  "/ouster/points"
-      imu_topic:  "/imu/data"
-      time_sync_en: false
-      time_offset_lidar_to_imu: 0.0
+Eigen  >= 3.3.4, Follow [Eigen Installation](http://eigen.tuxfamily.org/index.php?title=Main_Page).
 
-    preprocess:
-      lidar_type: 2                # 3 tương ứng với cảm biến Ouster
-      scan_line: 128               # Số tia của Ouster trong dataset này
-      timestamp_unit: 0            # 0 = Giây (seconds)
-      blind: 0.0
+### <span id="1.3">1.3. **livox_ros_driver2**</span>
+Follow [livox_ros_driver2 Installation](https://github.com/Livox-SDK/livox_ros_driver2).
 
-    mapping:
-      acc_cov: 0.0111974126
-      gyr_cov: 0.0102709048
-      b_acc_cov: 0.0001175176
-      b_gyr_cov: 0.0000913553
-      fov_degree: 180.0
-      det_range: 100.0
-      extrinsic_est_en: true
-      
-      # Tọa độ tịnh tiến của Ouster (từ mảng T gốc)
-      extrinsic_T: [ 0.215, 0.0, 0.018 ]
-      
-      # Quaternion [1, 0, 0, 0] của Ouster quy đổi ra Ma trận xoay 3x3 (Identity Matrix)
-      extrinsic_R: [ 1.0, 0.0, 0.0,
-                     0.0, 1.0, 0.0,
-                     0.0, 0.0, 1.0 ]
+You can also use the one I modified [livox_ros_driver2](https://github.com/Ericsii/livox_ros_driver2/tree/feature/use-standard-unit)
 
-    publish:
-      path_en: true
-      scan_publish_en: true
-      dense_publish_en: true
-      scan_bodyframe_pub_en: true
+*Remarks:*
+- Since the FAST-LIO must support Livox serials LiDAR firstly, so the **livox_ros_driver** must be installed and **sourced** before run any FAST-LIO launch file.
+- How to source? The easiest way is add the line ``` source $Licox_ros_driver_dir$/devel/setup.bash ``` to the end of file ``` ~/.bashrc ```, where ``` $Licox_ros_driver_dir$ ``` is the directory of the livox ros driver workspace (should be the ``` ws_livox ``` directory if you completely followed the livox official document).
 
-    pcd_save:
-      pcd_save_en: true
-      interval: -1
 
-    uncertainty:
-      point_cov_max: 0.00125
-      point_cov_min: 0.00075
-      plane_cov_max: 1.0
-      plane_cov_min: 0.8
-      localize_cov_max: 2.0
-      localize_cov_min: 0.3
-      localize_thresh_max: 0.7
-      localize_thresh_min: 0.2
-      cov_threshold: 0.5
--------------------------------------------------------------------------------
-colcon build --packages-select fast_lio
-source install/setup.zsh
-terminal 1:
-ros2 launch fast_lio mapping.launch.py config_file:=city02.yaml
-KQ: [fastlio_mapping-1] [INFO] [1779206737.041916823] [laser_mapping]: p_pre->lidar_type 3
-Cách chạy file city02
-Bước 1: Chuyển bag ros1 sang bag ros2 bằng cách:
-cd /media/crl/3D/anhthu/City02/sensor_data
-ls
-KQ:
-City02_Bag       data_stamp.csv   Livox_avia  ouster            pack_to_ros2_bag.py
-City02_ROS2_Bag  Groundtruth.txt  Livox_tele  ouster_stamp.csv  xsens_imu.csv
-nano pack_to_ros2_bag.py
-File code pack_to_ros2_bag.py
--------------------------------------------------------------------------------
-import os
-import csv
-import numpy as np
-import rclpy
-from rclpy.serialization import serialize_message
-from rosbag2_py import SequentialWriter, StorageOptions, ConverterOptions, TopicMetadata
-from sensor_msgs.msg import PointCloud2, PointField, Imu
-from builtin_interfaces.msg import Time
-from std_msgs.msg import Header
+## 2. Build
+Clone the repository and colcon build:
 
-def ns_to_ros_time(timestamp_ns):
-    time_msg = Time()
-    time_msg.sec = int(timestamp_ns // 1_000_000_000)
-    time_msg.nanosec = int(timestamp_ns % 1_000_000_000)
-    return time_msg
+```bash
+    cd <ros2_ws>/src # cd into a ros2 workspace folder
+    git clone https://github.com/Ericsii/FAST_LIO.git --recursive
+    cd ..
+    rosdep install --from-paths src --ignore-src -y
+    colcon build --symlink-install
+    . ./install/setup.bash # use setup.zsh if use zsh
+```
+- **Remember to source the livox_ros_driver before build (follow [1.3 livox_ros_driver](#1.3))**
+- If you want to use a custom build of PCL, add the following line to ~/.bashrc
+```export PCL_ROOT={CUSTOM_PCL_PATH}```
+## 3. Directly run
+Noted:
 
-def create_velodyne_pointcloud2_msg(timestamp_ns, points_4_cols):
-    """Tạo PointCloud2 chuẩn 6 trường của Velodyne: x, y, z, intensity, ring, time"""
-    msg = PointCloud2()
-    msg.header = Header()
-    msg.header.stamp = ns_to_ros_time(timestamp_ns)
-    msg.header.frame_id = "camera_init" # Bắt buộc theo chuẩn LIO
+A. Please make sure the IMU and LiDAR are **Synchronized**, that's important.
 
-    msg.height = 1
-    num_points = len(points_4_cols)
-    msg.width = num_points
+B. The warning message "Failed to find match for field 'time'." means the timestamps of each LiDAR points are missed in the rosbag file. That is important for the forward propagation and backwark propagation.
+
+C. We recommend to set the **extrinsic_est_en** to false if the extrinsic is give. As for the extrinsic initiallization, please refer to our recent work: [**Robust Real-time LiDAR-inertial Initialization**](https://github.com/hku-mars/LiDAR_IMU_Init).
+
+### 3.1 Run use ros launch
+Connect to your PC to Livox LiDAR by following  [Livox-ros-driver2 installation](https://github.com/Livox-SDK/livox_ros_driver2), then
+```bash
+cd <ros2_ws>
+. install/setup.bash # use setup.zsh if use zsh
+ros2 launch fast_lio mapping.launch.py config_file:=avia.yaml
+```
+
+Change `config_file` parameter to other yaml file under config directory as you need.
+
+Launch livox ros driver. Use MID360 as an example.
+
+```bash
+ros2 launch livox_ros_driver2 msg_MID360_launch.py
+```
+
+- For livox serials, FAST-LIO only support the data collected by the ``` livox_lidar_msg.launch ``` since only its ``` livox_ros_driver2/CustomMsg ``` data structure produces the timestamp of each LiDAR point which is very important for the motion undistortion. ``` livox_lidar.launch ``` can not produce it right now.
+- If you want to change the frame rate, please modify the **publish_freq** parameter in the [livox_lidar_msg.launch](https://github.com/Livox-SDK/livox_ros_driver/blob/master/livox_ros_driver2/launch/livox_lidar_msg.launch) of [Livox-ros-driver](https://github.com/Livox-SDK/livox_ros_driver2) before make the livox_ros_driver pakage.
+
+### 3.2 For Livox serials with external IMU
+
+mapping_avia.launch theratically supports mid-70, mid-40 or other livox serial LiDAR, but need to setup some parameters befor run:
+
+Edit ``` config/avia.yaml ``` to set the below parameters:
+
+1. LiDAR point cloud topic name: ``` lid_topic ```
+2. IMU topic name: ``` imu_topic ```
+3. Translational extrinsic: ``` extrinsic_T ```
+4. Rotational extrinsic: ``` extrinsic_R ``` (only support rotation matrix)
+- The extrinsic parameters in FAST-LIO is defined as the LiDAR's pose (position and rotation matrix) in IMU body frame (i.e. the IMU is the base frame). They can be found in the official manual.
+- FAST-LIO produces a very simple software time sync for livox LiDAR, set parameter ```time_sync_en``` to ture to turn on. But turn on **ONLY IF external time synchronization is really not possible**, since the software time sync cannot make sure accuracy.
+
+### 3.4 PCD file save
+
+Set ``` pcd_save_enable ``` in launchfile to ``` 1 ```. All the scans (in global frame) will be accumulated and saved to the file ``` FAST_LIO/PCD/scans.pcd ``` after the FAST-LIO is terminated. ```pcl_viewer scans.pcd``` can visualize the point clouds.
+
+*Tips for pcl_viewer:*
+- change what to visualize/color by pressing keyboard 1,2,3,4,5 when pcl_viewer is running. 
+```
+    1 is all random
+    2 is X values
+    3 is Y values
+    4 is Z values
+    5 is intensity
+```
+
+## 4. Rosbag Example
+### 4.1 Livox Avia Rosbag
+<div align="left">
+<img src="doc/results/HKU_LG_Indoor.png" width=47% />
+<img src="doc/results/HKU_MB_002.png" width = 51% >
+
+Files: Can be downloaded from [google drive](https://drive.google.com/drive/folders/1CGYEJ9-wWjr8INyan6q1BZz_5VtGB-fP?usp=sharing)**!!!This ros1 bag should be convert to ros2!!!**
+
+Run:
+```bash
+ros2 launch fast_lio mapping.launch.py config_path:=<path_to_your_config_file>
+ros2 bag play <your_bag_dir>
+
+```
+
+### 4.2 Velodyne HDL-32E Rosbag
+
+**NCLT Dataset**: Original bin file can be found [here](http://robots.engin.umich.edu/nclt/).
+
+We produce [Rosbag Files](https://drive.google.com/drive/folders/1VBK5idI1oyW0GC_I_Hxh63aqam3nocNK?usp=sharing) and [a python script](https://drive.google.com/file/d/1leh7DxbHx29DyS1NJkvEfeNJoccxH7XM/view) to generate Rosbag files: ```python3 sensordata_to_rosbag_fastlio.py bin_file_dir bag_name.bag```**!!!This ros1 bag should be convert to ros2!!!** To convert ros1 bag to ros2 bag, please follow the documentation [Convert rosbag versions](https://ternaris.gitlab.io/rosbags/topics/convert.html)
     
-    msg.fields = [
-        PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
-        PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
-        PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
-        PointField(name='intensity', offset=12, datatype=PointField.FLOAT32, count=1),
-        PointField(name='ring', offset=16, datatype=PointField.UINT16, count=1),
-        PointField(name='time', offset=18, datatype=PointField.FLOAT32, count=1),
-    ]
-    
-    # Kích thước mỗi điểm là 22 bytes: 4x4 (float32) + 2 (uint16) + 4 (float32)
-    # Tuy nhiên, ROS thường căn chỉnh bộ nhớ (padding) thành bội số của 4, nên ta dùng 32 bytes
-    msg.point_step = 32 
-    msg.row_step = msg.point_step * msg.width
-    msg.is_dense = True
-    msg.is_bigendian = False
+Run:
+```
+roslaunch fast_lio mapping_velodyne.launch
+rosbag play YOUR_DOWNLOADED.bag
+```
 
-    # Khởi tạo mảng bộ nhớ đệm (buffer) toàn số 0
-    buffer = np.zeros(num_points * (msg.point_step // 4), dtype=np.float32)
-    
-    # Đổ 4 cột x, y, z, intensity vào các vị trí offset
-    buffer[0::8] = points_4_cols[:, 0] # x
-    buffer[1::8] = points_4_cols[:, 1] # y
-    buffer[2::8] = points_4_cols[:, 2] # z
-    buffer[3::8] = points_4_cols[:, 3] # intensity
-    
-    # Trường Time (float32): Tính bằng khoảng cách giữa các điểm giả lập (để bù trừ chuyển động)
-    time_array = np.linspace(0.0, 0.1, num_points, dtype=np.float32)
-    buffer[4::8] = time_array
-    
-    # Chuyển đổi buffer thành chuỗi byte thô
-    raw_bytes = bytearray(buffer.tobytes())
-    
-    # Trường Ring (uint16): Chèn vào offset 16 của mỗi điểm (chiếm 2 byte)
-    # Ouster có 128 tia, ta tạo mảng tia lặp lại từ 0 đến 127
-    ring_array = np.tile(np.arange(128, dtype=np.uint16), int(np.ceil(num_points / 128)))[:num_points]
-    
-    # Ghi đè byte của Ring vào đúng vị trí offset 16
-    for i in range(num_points):
-        ring_bytes = ring_array[i].tobytes()
-        base_idx = i * msg.point_step
-        raw_bytes[base_idx + 16 : base_idx + 18] = ring_bytes
+## 5.Implementation on UAV
+In order to validate the robustness and computational efficiency of FAST-LIO in actual mobile robots, we build a small-scale quadrotor which can carry a Livox Avia LiDAR with 70 degree FoV and a DJI Manifold 2-C onboard computer with a 1.8 GHz Intel i7-8550U CPU and 8 G RAM, as shown in below.
 
-    msg.data = bytes(raw_bytes)
-    return msg
+The main structure of this UAV is 3d printed (Aluminum or PLA), the .stl file will be open-sourced in the future.
 
-def main():
-    output_bag_path = 'City02_ROS2_Bag'
-    if os.path.exists(output_bag_path):
-        print(f"Cảnh báo: Thư mục {output_bag_path} đã tồn tại. Hãy xóa nó!")
-        return
+<div align="center">
+    <img src="doc/uav01.jpg" width=40.5% >
+    <img src="doc/uav_system.png" width=57% >
+</div>
 
-    rclpy.init()
-    writer = SequentialWriter()
-    storage_options = StorageOptions(uri=output_bag_path, storage_id='sqlite3')
-    converter_options = ConverterOptions(
-        input_serialization_format='cdr',
-        output_serialization_format='cdr'
-    )
-    writer.open(storage_options, converter_options)
+## 6.Acknowledgments
 
-    imu_topic = '/imu/data'
-    lidar_topic = '/ouster/points'
-
-    writer.create_topic(TopicMetadata(id=1, name=imu_topic, type='sensor_msgs/msg/Imu', serialization_format='cdr'))
-    writer.create_topic(TopicMetadata(id=2, name=lidar_topic, type='sensor_msgs/msg/PointCloud2', serialization_format='cdr'))
-
-    print("Đóng gói IMU...")
-    with open('xsens_imu.csv', 'r') as f:
-        reader = csv.reader(f)
-        next(reader) 
-        for row in reader:
-            if len(row) < 7: continue
-            timestamp_ns = int(row[0].strip())
-            imu_msg = Imu()
-            imu_msg.header.stamp = ns_to_ros_time(timestamp_ns)
-            imu_msg.header.frame_id = "camera_init" # Cùng quy chiếu với LiDAR
-            
-            imu_msg.linear_acceleration.x = float(row[1])
-            imu_msg.linear_acceleration.y = float(row[2])
-            imu_msg.linear_acceleration.z = float(row[3])
-            imu_msg.angular_velocity.x = float(row[4])
-            imu_msg.angular_velocity.y = float(row[5])
-            imu_msg.angular_velocity.z = float(row[6])
-            
-            writer.write(imu_topic, serialize_message(imu_msg), timestamp_ns)
-
-    print("Đóng gói LiDAR chuẩn Velodyne...")
-    with open('ouster_stamp.csv', 'r') as f:
-        reader = csv.reader(f)
-        next(reader) 
-        count = 0
-        for row in reader:
-            timestamp_ns = int(row[0].strip())
-            bin_filename = f"{row[0].strip()}.bin" 
-            bin_path = os.path.join('ouster', bin_filename)
-            
-            # if os.path.exists(bin_path):
-            #     raw_data = np.fromfile(bin_path, dtype=np.float32)
-            #     clean_data = raw_data[256:]
-            #     num_points = len(clean_data) // 9
-            #     data_9_cols = clean_data[:num_points * 9].reshape(-1, 9)
-            #     points_4_cols = data_9_cols[:, :4].astype(np.float32)
-                
-            #     # Dùng hàm mới!
-            #     pc_msg = create_velodyne_pointcloud2_msg(timestamp_ns, points_4_cols)
-            #     writer.write(lidar_topic, serialize_message(pc_msg), timestamp_ns)
-            # if os.path.exists(bin_path):
-            #     # Đọc thẳng dữ liệu, KHÔNG cắt bỏ 256
-            #     raw_data = np.fromfile(bin_path, dtype=np.float32)
-                
-            #     num_points = len(raw_data) // 9
-            #     data_9_cols = raw_data[:num_points * 9].reshape(-1, 9)
-                
-            #     # Lấy 4 cột chuẩn: X, Y, Z, Intensity
-            #     points_4_cols = data_9_cols[:, :4].astype(np.float32)
-                
-            #     # Gọi hàm giả lập 6 trường Velodyne (đã viết ở bước trước)
-            #     pc_msg = create_velodyne_pointcloud2_msg(timestamp_ns, points_4_cols)
-            #     writer.write(lidar_topic, serialize_message(pc_msg), timestamp_ns) 
-            # if os.path.exists(bin_path):
-            #     # 1. Đọc thẳng dữ liệu, không cắt 256
-            #     raw_data = np.fromfile(bin_path, dtype=np.float32)
-                
-            #     # 2. Gom theo khối 8 float
-            #     num_points = len(raw_data) // 8
-            #     data_8_cols = raw_data[:num_points * 8].reshape(-1, 8)
-                
-            #     # 3. Lấy 4 cột đầu tiên: X, Y, Z, Intensity
-            #     points_4_cols = data_8_cols[:, :4].astype(np.float32)
-                
-            #     # --- THÊM LỚP KHIÊN BẢO VỆ Ở ĐÂY ---
-            #     # Bước 3.1: Loại bỏ NGAY các dòng chứa NaN hoặc Inf
-            #     is_valid = np.isfinite(points_4_cols).all(axis=1)
-            #     safe_points = points_4_cols[is_valid]
-                
-            #     # Bước 3.2: Lọc khoảng cách (chỉ tính trên những điểm an toàn)
-            #     # Tính bình phương khoảng cách (X^2 + Y^2 + Z^2)
-            #     ranges_sq = np.sum(safe_points[:, :3]**2, axis=1)
-            #     valid_mask = (
-            #         (np.abs(points_4_cols[:, 0]) < 150.0) &  # X nhỏ hơn 150m
-            #         (np.abs(points_4_cols[:, 1]) < 150.0) &  # Y nhỏ hơn 150m
-            #         (np.abs(points_4_cols[:, 2]) < 150.0) &  # Z nhỏ hơn 150m
-            #         (np.abs(points_4_cols[:, 0]) > 0.1)      # Loại bỏ điểm mù (bám dính vào xe)
-            #     )
-            #     # Bước 3.3: Lấy những điểm cách xa gốc trên 0.1m (bình phương > 0.01)
-            #     # valid_points = safe_points[ranges_sq > 0.01]
-            #     valid_points = points_4_cols[valid_mask]
-
-            #     # Gọi hàm tạo Velodyne 
-            #     pc_msg = create_velodyne_pointcloud2_msg(timestamp_ns, valid_points)
-            #     writer.write(lidar_topic, serialize_message(pc_msg), timestamp_ns) 
-            if os.path.exists(bin_path):
-                # 1. Đọc thẳng dữ liệu thô
-                raw_data = np.fromfile(bin_path, dtype=np.float32)
-                
-                # 2. CHÌA KHÓA VÀNG: Gom theo khối 12 float (48 bytes) CHỨ KHÔNG PHẢI 8!
-                num_points = len(raw_data) // 12
-                data_12_cols = raw_data[:num_points * 12].reshape(-1, 12)
-                
-                # 3. Tạo mảng 4 cột an toàn
-                points_4_cols = np.zeros((num_points, 4), dtype=np.float32)
-                
-                # Lấy ĐÚNG 3 cột đầu tiên (X, Y, Z) - Nơi chứa tọa độ thật
-                points_4_cols[:, :3] = data_12_cols[:, :3]
-                
-                # Cột thứ 4 (Intensity) trong file bin đang bị lỗi chứa số -inf
-                # Ta ép tất cả cường độ bằng 100.0 để Fast-LIO2 không bị hoảng loạn
-                points_4_cols[:, 3] = 100.0 
-                
-                # 4. Lớp khiên bảo vệ (Chỉ lấy điểm từ 0.1m đến 150m)
-                ranges_sq = np.sum(points_4_cols[:, :3]**2, axis=1)
-                # 0.01 là bình phương của 0.1m, 22500 là bình phương của 150m
-                valid_mask = (ranges_sq > 0.01) & (ranges_sq < 22500.0)
-                valid_points = points_4_cols[valid_mask]
-
-                # 5. Gọi hàm tạo Velodyne 
-                pc_msg = create_velodyne_pointcloud2_msg(timestamp_ns, valid_points)
-                writer.write(lidar_topic, serialize_message(pc_msg), timestamp_ns)
-                count += 1
-                if count % 100 == 0:
-                    print(f"Đã xử lý {count} khung hình LiDAR...")
-
-    print(f"Xong! File lưu tại: {output_bag_path}")
-    rclpy.shutdown()
-
-if __name__ == '__main__':
-    main()
--------------------------------------------------------------------------------
-python3 pack_to_ros2_bag.py
-Kiểm tra thông tin dữ liệu:
-ros2 bag info City02_ROS2_Bag
-KQ:
-Files:             City02_ROS2_Bag_0.db3
-Bag size:          16.8 GiB
-Storage id:        sqlite3
-ROS Distro:        jazzy
-Duration:          624.756752968s
-Start:             Dec 21 2022 08:13:07.156928062 (1671631987.156928062)
-End:               Dec 21 2022 08:23:31.913681030 (1671632611.913681030)
-Messages:          68723
-Topic information: Topic: /imu/data | Type: sensor_msgs/msg/Imu | Count: 62477 | Serialization Format: cdr
-                   Topic: /ouster/points | Type: sensor_msgs/msg/PointCloud2 | Count: 6246 | Serialization Format: cdr
-Service:           0
-Service information:
-Danh sách 5 file đầu tiên
-ls ouster | head -n 5
-KQ:
-1671631987059262720.bin
-1671631987159277056.bin
-1671631987259305216.bin
-1671631987359341568.bin
-1671631987459377408.bin
-Kiem tra thông tin file:
-ls -lh /media/crl/3D/anhthu/City02/sensor_data/City02_ROS2_Bag/City02_ROS2_Bag_0.db3
-KQ:
-----------------------------------------------------------------------------
--rw-r--r-- 1 crl crl 17G May 19 10:13 /media/crl/3D/anhthu/City02/sensor_data/City02_ROS2_Bag/City02_ROS2_Bag_0.db3
-----------------------------------------------------------------------------
-terminal 2:
-ros2 bag play /media/crl23:12 19/05/2026/3D/anhthu/City02/sensor_data/City02_ROS2_Bag --clock
+Thanks for LOAM(J. Zhang and S. Singh. LOAM: Lidar Odometry and Mapping in Real-time), [Livox_Mapping](https://github.com/Livox-SDK/livox_mapping), [LINS](https://github.com/ChaoqinRobotics/LINS---LiDAR-inertial-SLAM) and [Loam_Livox](https://github.com/hku-mars/loam_livox).
